@@ -14,11 +14,6 @@ def _evaluate_dataset(X,y):
 
 def _evaluate_model(model):
     details = {}
-    if hasattr(model, "num_comps"):
-        details["num_comps"] = model.num_comps
-    if hasattr(model, "get_mixture_probs"):
-        details["mixture_probs"] = model.get_mixture_probs().detach().tolist()
-
     details["weights"] = model.get_weights().detach().tolist()
     return details
 

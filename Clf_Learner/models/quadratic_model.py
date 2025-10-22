@@ -13,22 +13,16 @@ class QuadraticModel(BaseModel, nn.Module):
     get_boundary_vals is implemented only for d=2 (plotting).
     """
     def __init__(self, best_response:BaseBestResponse, loss:BaseLoss,
-                 address:str, x_dim:int, is_primary:bool=True, **kwargs):
-        BaseModel.__init__(self, best_response, loss, address, x_dim, is_primary)
+                 address:str, x_dim:int, **kwargs):
+        BaseModel.__init__(self, best_response, loss, address, x_dim)
         nn.Module.__init__(self)
         self.x_dim = x_dim
 
-        if self.is_primary():
-            # Symmetric quadratic matrix Q
-            Q = torch.randn(x_dim, x_dim)
-            self.Q = nn.Parameter((Q + Q.T)/2)       # make symmetric
-            self.w = nn.Parameter(torch.randn(x_dim))
-            self.b = nn.Parameter(torch.zeros(1))
-        else:
-            Q = torch.randn(x_dim, x_dim)
-            self.Q = (Q + Q.T)/2
-            self.w = torch.randn(x_dim)
-            self.b = torch.zeros(1)
+        # Symmetric quadratic matrix Q
+        Q = torch.randn(x_dim, x_dim)
+        self.Q = nn.Parameter((Q + Q.T)/2)       # make symmetric
+        self.w = nn.Parameter(torch.randn(x_dim))
+        self.b = nn.Parameter(torch.zeros(1))
 
         self.best_response = best_response
         self.loss = loss
@@ -89,19 +83,6 @@ class QuadraticModel(BaseModel, nn.Module):
             return torch.cat([flatQ, self.w.flatten(), self.b.view(-1)], dim=0)
         else:
             return torch.cat([flatQ, self.w.flatten()], dim=0)
-
-    def set_weights(self, weight_tensor:torch.Tensor) -> None:
-        """
-        Set parameters for non-primary models.
-        Expected layout: [vec(Q), w, b].
-        """
-        assert not self.is_primary(), "Error: Can only set model weights for non-primary models"
-        d = self.x_dim
-        num_Q = d*d
-        flatQ = weight_tensor[:, :num_Q]
-        self.Q = flatQ.view(-1,d,d)
-        self.w = weight_tensor[:, num_Q:num_Q+d]
-        self.b = weight_tensor[:, num_Q+d]
 
     def fit(self, train_dset:BaseDataset, opt, lr:float, batch_size:int, epochs:int, validate:bool, verbose:bool=False) -> dict:
         train_losses_dict = vanilla_training_loop(self, train_dset, opt, lr, batch_size, epochs, validate, verbose)

@@ -7,8 +7,8 @@ from .tools.model_training_tools import vanilla_training_loop
 class MLPModel(BaseModel, nn.Module):
     """Multi-Layer Perceptron"""
     def __init__(self, best_response:BaseBestResponse, loss:BaseLoss, address:str, x_dim:int, hidden_layers:int=1,\
-                  hidden_dim:int=4, activation:str='relu', dropout:float=0.0, is_primary:bool=True, **kwargs):
-        BaseModel.__init__(self, best_response, loss, address, x_dim, is_primary)
+                  hidden_dim:int=4, activation:str='relu', dropout:float=0.0, **kwargs):
+        BaseModel.__init__(self, best_response, loss, address, x_dim)
         nn.Module.__init__(self)
 
         self.x_dim = x_dim
@@ -88,12 +88,6 @@ class MLPModel(BaseModel, nn.Module):
         """Flatten all parameters into a single vector."""
         return torch.cat([p.flatten() for p in self.parameters()])
 
-    def set_weights(self, weight_tensor: torch.Tensor) -> None:
-        """Set weights for non-primary models."""
-        assert not self.is_primary(), "Error: Can only set weights for non-primary models"
-        # NOTE: you'd need to reshape and load weights into the state_dict if you want this fully working.
-        raise NotImplementedError("Setting weights not yet implemented for MLPModel.")
-    
     def forward(self, X):
         """Forward pass (returns raw scores)."""
         return self.network(X).squeeze(-1)

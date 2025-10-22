@@ -13,9 +13,8 @@ class ICNNModel(BaseModel, nn.Module):
 
     def __init__(self, best_response:BaseBestResponse, loss:BaseLoss, address:str, x_dim:int,
                  hidden_layers:int=1, hidden_dim:int=16, icnn_type:str='ICNN2',
-                 symm_act_first:bool=False, softplus_type:str='softplus', zero_softplus:bool=False,
-                 is_primary:bool=True, **kwargs):
-        BaseModel.__init__(self, best_response, loss, address, x_dim, is_primary)
+                 symm_act_first:bool=False, softplus_type:str='softplus', zero_softplus:bool=False, **kwargs):
+        BaseModel.__init__(self, best_response, loss, address, x_dim)
         nn.Module.__init__(self)
 
         self.x_dim = x_dim
@@ -47,9 +46,6 @@ class ICNNModel(BaseModel, nn.Module):
 
         self.best_response = best_response
         self.loss = loss
-
-
-
 
     def get_boundary_vals(self, range_t: torch.Tensor, res:int=200):
         """
@@ -94,11 +90,6 @@ class ICNNModel(BaseModel, nn.Module):
     def get_weights(self, **kwargs):
         """Flatten all parameters into a single vector."""
         return torch.cat([p.flatten() for p in self.parameters()])
-
-    def set_weights(self, weight_tensor: torch.Tensor) -> None:
-        """Set weights for non-primary models."""
-        assert not self.is_primary(), "Error: Can only set weights for non-primary models"
-        raise NotImplementedError("Setting weights not yet implemented for ICNNModel.")
 
     def forward(self, X):
         """Forward pass (returns raw scores)."""

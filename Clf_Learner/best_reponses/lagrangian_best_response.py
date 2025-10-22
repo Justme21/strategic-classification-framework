@@ -27,7 +27,6 @@ class LagrangianBestResponse(BaseBestResponse):
         self.lagrange_mult = torch.Tensor([]).to(device)
         self.lagrange_mult_cost = torch.Tensor([]).to(device)
 
-        self._t = 0 # Value only used for hyperparamter tuning
         self._margin = margin
         self._lagrange_mult_lr = lagrange_mult_lr
         self._lagrange_mult_cost_lr = lagrange_mult_cost_lr
@@ -80,9 +79,6 @@ class LagrangianBestResponse(BaseBestResponse):
             obj_comp = self._objective_impl
 
         for t in range(self.max_iterations):
-            # #for g in opt_z.param_groups:
-            # #    g['lr'] = self.lr / (1 + 0.1*t)
-
             opt_z.zero_grad()
             opt_lagrange.zero_grad()
             opt_lagrange_cost.zero_grad()
@@ -97,16 +93,6 @@ class LagrangianBestResponse(BaseBestResponse):
                 if Z.grad is not None:
                     Z.grad *= strat_mask
 
-            #predZ = model.predict(Z)
-            #print(f"Z2: {Z[2]}\t Grad: {Z.grad[2]}\t pred: {predZ[2]}")
-            #print(f"Z6: {Z[6]}\t Grad: {Z.grad[6]}\t pred: {predZ[6]}")
-            #print(f"Z12: {Z[12]}\t Grad: {Z.grad[12]}\t pred: {predZ[12]}")
-            #print()
-
-            #if lagrange_mult[2]>0:
-            #    import pdb
-            #    pdb.set_trace()
-
             opt_z.step()
             opt_lagrange.step()
             opt_lagrange_cost.step()
@@ -119,16 +105,17 @@ class LagrangianBestResponse(BaseBestResponse):
                 print("iter", t)
 
                 print("Negative Points")
-                print(f"  util.mean() {self._utility(Z, model)[pred_x].mean().item()}")
-                print(f"  cost.mean() {self._cost(X,Z)[pred_x].mean().item()}", )
+                print(f"  util.mean() {self._utility(Z, model)[pred_x].mean().item()}") # Should track up and then come back down as trade-off between maximising utility and minimising cost
+                print(f"  cost.mean() {self._cost(X,Z)[pred_x].mean().item()}", ) # Should increase gradually and then plateau. 
                 print(f"  Z_X: {Z[pred_x, 0].mean()}\tZ_Y: {Z[pred_x,1].mean()}")
-                print(f"  lagrange_mult.mean {lagrange_mult[pred_x].mean().item()} \t lagrange_cost.mean {lagrange_mult_cost[pred_x].mean().item()}")
+                print(f"  lagrange_mult.mean {lagrange_mult[pred_x].mean().item()} \t lagrange_cost.mean {lagrange_mult_cost[pred_x].mean().item()}") # Should be nonzero for negative points pressing up to boundary constraints
 
+                # Expect utility for positive points to stay about 0, cost should be about 0.
                 print("Positive Points")
-                print(f"  util.mean() {self._utility(Z, model)[~pred_x].mean().item()}")
-                print(f"  cost.mean() {self._cost(X,Z)[~pred_x].mean().item()}", )
+                print(f"  util.mean() {self._utility(Z, model)[~pred_x].mean().item()}") # Should stay about 0
+                print(f"  cost.mean() {self._cost(X,Z)[~pred_x].mean().item()}", ) # Should stay about 0
                 print(f"  Z_X: {Z[~pred_x, 0].mean()}\tZ_Y: {Z[~pred_x,1].mean()}")
-                print(f"  lagrange_mult.mean {lagrange_mult[~pred_x].mean().item()} \t lagrange_cost.mean {lagrange_mult_cost[~pred_x].mean().item()}")
+                print(f"  lagrange_mult.mean {lagrange_mult[~pred_x].mean().item()} \t lagrange_cost.mean {lagrange_mult_cost[~pred_x].mean().item()}") # Should stay about 0. If these change that means positive points are pressing against constraints
 
             if animate_rate is not None and t%animate_rate==0:
                 Z_store = torch.cat([Z_store, Z.detach().clone().unsqueeze(0)], dim=0)
@@ -162,32 +149,23 @@ class LagrangianBestResponse(BaseBestResponse):
         self.lagrange_mult = lagrange_mult.detach().clone()
         self.lagrange_mult_cost = lagrange_mult_cost.detach().clone()
 
-        self._t = t
-
         # Produce outputs
         with torch.no_grad():
             # Only realise changes when all conditions satisfied, otherwise keep old X
             cost = self._cost(X,Z)
             cond1 = cost<2
 
-            #util_X = self._utility(X, model)
-            #util_Z = self._utility(Z, model)
-            #cond2 = util_Z>util_X
-
             pred_X = model.predict(X)
             pred_Z = model.predict(Z)
             cond2 = pred_Z>pred_X
 
             cond=cond1*cond2
-            #cond = cond2
             cond = cond.repeat(X.size(1), 1).T
-            #cond = cond.unsqueeze(1).expand(-1, X.size(1)) <- clearer?
 
             if animate_rate is not None:
                 cond = cond.unsqueeze(0)
                 X_opt = torch.where(cond, Z_store, X_store)
             else:
                 X_opt = torch.where(cond, Z, X)
-                #X_opt = Z
 
         return X_opt

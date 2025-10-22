@@ -7,22 +7,15 @@ from .tools.model_training_tools import vanilla_training_loop
 
 class ParabolicModel(BaseModel, nn.Module):
     """Parabolic Classifier of the form: f(x) = x[1] - a(x[0]-b)^2 + c"""
-    def __init__(self, best_response:BaseBestResponse, loss:BaseLoss, address:str, x_dim:int, is_primary:bool=True, **kwargs):
-        BaseModel.__init__(self, best_response, loss, address, x_dim, is_primary)
+    def __init__(self, best_response:BaseBestResponse, loss:BaseLoss, address:str, x_dim:int, **kwargs):
+        BaseModel.__init__(self, best_response, loss, address, x_dim)
         nn.Module.__init__(self)
         assert x_dim == 2, "Error: At the moment Parabolic classifier can only be applied to 2D-datasets"
         self.x_dim = x_dim
 
-        if self.is_primary():
-            # Model is the primary model being trained, so model weights will be optimised by optimiser
-            self.angle = nn.Parameter(2*torch.pi*torch.rand(1)) # Angle the classifier is rotated by
-            self.coef = nn.Parameter(torch.tensor([1.0])) # Scales the with of the classifier
-            self.offset = nn.Parameter(torch.rand([1,2])) # Moves the turning point of the classifier along x- and y- axes
-        else:
-            # Model is secondary to some other model (e.g. it is a component of a randomised model) so these should be treated as scalars
-            self.angle = 2*math.pi*torch.rand(1) # Angle the classifier is rotated by
-            self.coef = torch.tensor([1.0]) # Scales the with of the classifier
-            self.offset = torch.rand([1,2]) # Moves the turning point of the classifier along x- and y- axes
+        self.angle = nn.Parameter(2*torch.pi*torch.rand(1)) # Angle the classifier is rotated by
+        self.coef = nn.Parameter(torch.tensor([1.0])) # Scales the with of the classifier
+        self.offset = nn.Parameter(torch.rand([1,2])) # Moves the turning point of the classifier along x- and y- axes
 
         self.best_response = best_response
         self.loss = loss
@@ -63,16 +56,6 @@ class ParabolicModel(BaseModel, nn.Module):
     def get_weights(self, include_bias=True):
         # TODO: Figure out if offset values should be returned here
         return torch.cat((self.angle, self.coef, self.offset.squeeze()), dim=0)
-
-    def set_weights(self, weight_tensor: torch.Tensor) -> None:
-        assert not self.is_primary(), "Error: Can only set model weights for non-primary models"
-        # NOTE: This function should only be called if model is not primary.
-        # Weight setting here means individual model cannot be called, and should only be called through primary model
-        # When weights are set here the resulting weight tensors will have a specific batch dimension that isn't in standard def
-        # TODO: Probably more flexible to define "self.weights" list in init and then using that to prescribe the order of definition in both get_ and set_weights
-        self.angle = weight_tensor[:, 0]
-        self.coef = weight_tensor[:, 1]
-        self.offset = weight_tensor[:, 2:]
 
     def forward(self, X):
         # Step 1: Rotate coordinate space

@@ -45,10 +45,6 @@ class GradientAscentBestResponse(BaseBestResponse):
                 if Z.grad is not None:
                     Z.grad *= strat_mask
 
-            # NOTE: Doesn't entirely resolve instability in results
-            # Decaying the learning rate to make the later iteration rounds less noisy
-            #for param_group in opt.param_groups:
-            #    param_group['lr'] = self.lr/math.sqrt(t+1)
             opt.step()
 
             # Save frames if animating
@@ -70,20 +66,13 @@ class GradientAscentBestResponse(BaseBestResponse):
         
 
         with torch.no_grad():
-            #obj_Z = self.objective(Z, X, model)
-            #obj_X = self.objective(X, X, model)
-            #cond2 = obj_Z>obj_X
-            #cond = cond2
-
             pred_X = model.predict(X)
             pred_Z = model.predict(Z)
-            cond2 = pred_Z>pred_X
+            cond1 = pred_Z>pred_X
 
             cost = self._cost(X,Z)
-            cond3 = cost<=2
-            cond = cond2*cond3
-
-            #cond=cond1*cond2*cond3
+            cond2 = cost<2
+            cond = cond1*cond2
 
             cond = cond.unsqueeze(1)
             if animate_rate is not None:

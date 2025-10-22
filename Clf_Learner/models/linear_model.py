@@ -6,16 +6,12 @@ from .tools.model_training_tools import vanilla_training_loop
 
 class LinearModel(BaseModel, nn.Module):
     """Standard linear model"""
-    def __init__(self, best_response:BaseBestResponse, loss:BaseLoss, address:str, x_dim:int, is_primary:bool=True, **kwargs):
-        BaseModel.__init__(self, best_response, loss, address, x_dim, is_primary)
+    def __init__(self, best_response:BaseBestResponse, loss:BaseLoss, address:str, x_dim:int, **kwargs):
+        BaseModel.__init__(self, best_response, loss, address, x_dim)
         nn.Module.__init__(self)
         self.x_dim = x_dim
-        if self.is_primary():
-            self.weight = nn.Parameter(torch.randn(1, x_dim))
-            self.bias = nn.Parameter(torch.randn(1))
-        else:
-            self.weight = torch.randn(1, x_dim)
-            self.bias = torch.randn(1)
+        self.weight = nn.Parameter(torch.randn(1, x_dim))
+        self.bias = nn.Parameter(torch.randn(1))
 
         self.best_response = best_response
         self.loss = loss
@@ -23,13 +19,8 @@ class LinearModel(BaseModel, nn.Module):
     def get_boundary_vals(self, X):
         """(Optional) For the input 1-D X values, returns the y values that would lie
             on the model decision boundary. This is only used for data visualisation (not included in repo)"""
-        if not self.is_primary():
-            # Weights still include batch term
-            W = self.weight.squeeze(0)[0]
-            b = self.bias.squeeze(0)
-        else:
-            W = self.weight[0]
-            b = self.bias
+        W = self.weight[0]
+        b = self.bias
 
         y = (-W[0]*X-b)*(1.0/W[1]) 
         boundary_coords = torch.stack([X,y], dim=1)
@@ -43,24 +34,9 @@ class LinearModel(BaseModel, nn.Module):
         
         return weights
     
-    def set_weights(self, weight_tensor:torch.Tensor) -> None:
-        assert not self.is_primary(), "Error: Can only set model weights for non-primary models"
-        # NOTE: This function should only be called if model is not primary.
-        # Weight setting here means individual model cannot be called, and should only be called through primary model
-        # When weights are set here the resulting weight tensors will have a specific batch dimension that isn't in standard def
-
-        self.weight = weight_tensor[:,:,:self.x_dim] # <batch_size> x 1 x x_dim
-        self.bias = weight_tensor[:,:,self.x_dim:].squeeze(1) # squeeze here to match conventional 1-D tensor definition <batch_size> x 1
-
     def forward(self, X):
         # Flatten to make output uni-dimensional to match y
-        # unsqueeze to ensure model output has the same dimensionality as non-deterministic model
-
-        if self.is_primary():
-            out = torch.einsum("bi, oi->bo", X, self.weight) + self.bias
-        else:
-            out = torch.einsum("bi, boi->bo", X, self.weight) + self.bias
-
+        out = torch.einsum("bi, oi->bo", X, self.weight) + self.bias
         return out.squeeze()
 
     def predict(self, X):

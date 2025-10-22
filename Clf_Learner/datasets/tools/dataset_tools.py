@@ -1,6 +1,7 @@
 import torch 
 
 class Standardiser:
+    """Standardises datasets"""
     def __init__(self, X:torch.Tensor):
         self.mean, self.std = self._fit(X)
     

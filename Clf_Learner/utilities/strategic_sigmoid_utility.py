@@ -12,4 +12,4 @@ class StrategicSigmoidUtility(BaseUtility):
     def __call__(self, X:Tensor, model:'BaseModel') -> Tensor:
         model_out = model.forward(X)
 
-        return self.coef*torch.sigmoid(self.alpha*model_out)
+        return self.coef*(2*torch.sigmoid(self.alpha*model_out)-1)

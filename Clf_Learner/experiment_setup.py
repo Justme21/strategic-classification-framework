@@ -1,10 +1,11 @@
 import json
+import numpy as np
 import torch
 
 from .interfaces.base_dataset import BaseDataset
 from .interfaces.base_model import BaseModel
 from .tools.model_building_tools import get_model, get_model_spec
-from .tools.dataset_building_tools import get_dataset
+from .tools.dataset_building_tools import get_dataset, lookup_filename
 from .tools.model_evaluation_tools import evaluate_model
 from .tools.results_tools import fetch_model, store_model, store_results
 
@@ -12,15 +13,15 @@ from .tools.results_tools import fetch_model, store_model, store_results
 EXP_OPT = torch.optim.Adam
 
 def _set_seed(seed_val):
+    np.random.seed(seed_val)
     torch.manual_seed(seed_val)
 
-def _run_experiment(dataset:BaseDataset, model:BaseModel, lr:float, batch_size:int, epochs: int, train:bool, test:bool, verbose:bool):
+def _run_experiment(dataset:BaseDataset, model:BaseModel, lr:float, batch_size:int, epochs: int, train:bool, validate:bool, test:bool, verbose:bool):
     results = {}
     # If training new model, pass to train
     if train:
         # TODO: Want to store training losses and validation losses (if/when validation is being run) and output them here 
-        train_results = model.fit(dataset, opt=EXP_OPT, lr=lr, batch_size=batch_size, epochs=epochs, verbose=verbose)
-        results['train'] = train_results
+        results = model.fit(dataset, opt=EXP_OPT, lr=lr, batch_size=batch_size, epochs=epochs, validate=validate, verbose=verbose)
 
     # If eval, load model and pass to eval
     if test:
@@ -34,8 +35,8 @@ def _run_experiment(dataset:BaseDataset, model:BaseModel, lr:float, batch_size:i
 
     return results
 
-def run_experiments(data_files:list, model_spec_names:list, best_response_name:str, cost_name:str, loss_name:str, model_name:str, utility_name:str, args:dict,\
-                    seed_val:int, lr:float, batch_size:int, epochs:int, exp_result_dir:str, hist_result_dir:str, train:bool, test:bool, store:bool, verbose:bool):
+def run_experiments(data_files:list, model_spec_names:list, best_response_name:str, cost_name:str, loss_name:str, model_name:str, utility_name:str, comp_args:dict,\
+                    seed_val:int, lr:float, batch_size:int, epochs:int, exp_result_dir:str, hist_result_dir:str, implicit:bool, train:bool, validate:bool, test:bool, store:bool, verbose:bool):
 
     assert train or hist_result_dir, "Error: Either you must train a new model from scratch, or you must specify a historic directory to load model from"
     if model_spec_names is not None:
@@ -46,7 +47,8 @@ def run_experiments(data_files:list, model_spec_names:list, best_response_name:s
 
     for filename in data_files:
         # Load dataset from spec
-        dataset = get_dataset(filename, -1, args.get('datasets', {}))
+        filename = lookup_filename(filename, verbose=verbose)
+        dataset = get_dataset(filename, -1, verbose=verbose, dataset_args=comp_args.get('datasets', {}))
 
         if dataset is None:
             if verbose:
@@ -59,7 +61,7 @@ def run_experiments(data_files:list, model_spec_names:list, best_response_name:s
             if verbose:
                 print(f"Running Experiment: Dataset {filename}\n Model: {model_spec}")
         
-            model = get_model(model_spec=model_spec, init_args=init_args, comp_args=args)
+            model = get_model(model_spec=model_spec, init_args=init_args, comp_args=comp_args, result_addr=exp_result_dir, dataset=dataset, implicit=implicit)
             
             if seed_val is not None:
                 _set_seed(seed_val)
@@ -68,11 +70,11 @@ def run_experiments(data_files:list, model_spec_names:list, best_response_name:s
                 # Load model state from historical data
                 model = fetch_model(model, hist_result_dir, filename, model_spec)
 
-            results = _run_experiment(dataset, model, lr, batch_size, epochs, train, test, verbose)
+            results = _run_experiment(dataset, model, lr, batch_size, epochs, train, validate, test, verbose)
     
             # Store results and return
             if store:
                 store_model(model, exp_result_dir, filename, model_spec)
-                store_results(results, exp_result_dir, filename, model_spec)
+                store_results(results, exp_result_dir, filename, model_spec, verbose=verbose)
 
     # TODO: Summarise Results

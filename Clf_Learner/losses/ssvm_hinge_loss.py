@@ -11,7 +11,7 @@ def _regularization_loss(model:BaseModel):
 
 def _hinge_loss(model:BaseModel, X:Tensor, y:Tensor):
     #Smart Strategic SVM version of the hinge loss
-    W = model.get_weights()
+    W = model.get_weights(include_bias=False)
 
     acc_term = y*model.forward(X)
     reg_term = 2*y*torch.norm(W, p=2)
@@ -25,7 +25,7 @@ class StrategicSVMHingeLoss(BaseLoss):
     def __init__(self, reg_weight=0, **kwargs):
         self.reg_weight = reg_weight
 
-    def __call__(self, model:BaseModel, X:Tensor, y:Tensor):
+    def __call__(self, model:BaseModel, X:Tensor, y:Tensor, *args):
         reg = self.reg_weight*_regularization_loss(model)
         loss = _hinge_loss(model, X, y)
         return reg + loss

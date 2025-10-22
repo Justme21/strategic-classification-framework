@@ -32,7 +32,7 @@ def _check_cols(df, target_col, strat_cols):
 class CSVDataset(TensorDataset):
     # TODO: Most likely each dataset will require it's own loader, as opposed to
     # each filetype. Come back to it later.
-    def __init__(self, csv_file:str, target_col:int|str, strat_cols:list[int|str]|None=None):
+    def __init__(self, csv_file:str, target_col:int|str, verbose:bool, strat_cols:list[int|str]|None=None):
         assert csv_file.endswith('.csv')
         if csv_file.startswith('/'):
             #Catching the case where you pass a non-local file
@@ -44,20 +44,38 @@ class CSVDataset(TensorDataset):
         target_col = _format_target_col(target_col, data_df.shape[1])
 
         _check_cols(data_df, target_col, strat_cols)
-
-        if strat_cols is None:
-            if isinstance(target_col, str):
-                strat_cols = [x for x in data_df.columns if x!=target_col]
-            else:
-                strat_cols = [x for x in range(data_df.shape[1]) if x!=target_col]
         
-        X_df = _get_columns(data_df, strat_cols)
+        # Numbered columns
+        data_columns = data_df.columns.to_list()
+        if isinstance(target_col, str):
+            non_target_cols = [i for i, x in enumerate(data_columns) if x!=target_col] 
+        else:
+            non_target_cols = [i for i, _ in enumerate(data_columns) if i!=target_col] 
+ 
+        X_df = _get_columns(data_df, non_target_cols)
         y_df = _get_columns(data_df, [target_col])
         
-        X = torch.tensor(X_df.values, dtype=torch.float32)
-        y = torch.tensor(y_df.values, dtype=torch.float32).squeeze()
+        # Don't want these tensors to be on GPU if that is default device. 
+        # Put onto device in training loop instead
+        X = torch.tensor(X_df.values, dtype=torch.float32, device="cpu")
+        y = torch.tensor(y_df.values, dtype=torch.float32, device="cpu").squeeze()
 
-        super().__init__(X=X, y=y)
+        # TODO: Fix this hack later
+        # Handling 0-1 binary data and map to -1, 1
+        if y.min()==0 and y.max()==1:
+            y = torch.where(y==0, -1, 1)
+
+        self._strat_cols = None
+        if strat_cols:
+            if not isinstance(strat_cols[0], int):
+                assert all([x in data_columns for x in strat_cols])  
+                int_strat_cols = [data_columns.index(x) for x in strat_cols]
+            else:
+                int_strat_cols = strat_cols
+
+            self._strat_cols = int_strat_cols
+
+        super().__init__(X=X, y=y, filename=csv_file)
 
     def __len__(self) -> int:
         return super().__len__()
@@ -70,3 +88,6 @@ class CSVDataset(TensorDataset):
 
     def get_all_vals(self):
         return super().get_all_vals()
+
+    def get_strategic_columns(self):
+        return self._strat_cols

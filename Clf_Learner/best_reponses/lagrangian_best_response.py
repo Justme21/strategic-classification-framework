@@ -33,7 +33,8 @@ class LagrangianBestResponse(BaseBestResponse):
         self._lagrange_mult_cost_lr = lagrange_mult_cost_lr
 
     def objective(self, Z: torch.Tensor, X: torch.Tensor, model: BaseModel):
-        return self._objective_impl(Z, X, model, self.lagrange_mult, self.lagrange_mult_cost)
+        t1 = self._objective_impl(Z, X, model, self.lagrange_mult, self.lagrange_mult_cost)
+        return t1
 
     def _objective_impl(self, Z:torch.Tensor, X:torch.Tensor, model:BaseModel, lagrange_mult:torch.Tensor, lagrange_mult_cost:torch.Tensor) -> torch.Tensor:
         cost = self._cost(X,Z)
@@ -96,6 +97,16 @@ class LagrangianBestResponse(BaseBestResponse):
                 if Z.grad is not None:
                     Z.grad *= strat_mask
 
+            #predZ = model.predict(Z)
+            #print(f"Z2: {Z[2]}\t Grad: {Z.grad[2]}\t pred: {predZ[2]}")
+            #print(f"Z6: {Z[6]}\t Grad: {Z.grad[6]}\t pred: {predZ[6]}")
+            #print(f"Z12: {Z[12]}\t Grad: {Z.grad[12]}\t pred: {predZ[12]}")
+            #print()
+
+            #if lagrange_mult[2]>0:
+            #    import pdb
+            #    pdb.set_trace()
+
             opt_z.step()
             opt_lagrange.step()
             opt_lagrange_cost.step()
@@ -106,6 +117,7 @@ class LagrangianBestResponse(BaseBestResponse):
 
             if debug and t%50 == 0:
                 print("iter", t)
+
                 print("Negative Points")
                 print(f"  util.mean() {self._utility(Z, model)[pred_x].mean().item()}")
                 print(f"  cost.mean() {self._cost(X,Z)[pred_x].mean().item()}", )

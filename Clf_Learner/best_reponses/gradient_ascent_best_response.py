@@ -13,12 +13,9 @@ class GradientAscentBestResponse(BaseBestResponse):
 
         self._strategic_columns = strategic_columns
 
-        self._cost = cost
-        self._utility = utility
-
         self.max_iterations = max_iterations
         self.lr= lr
-        self.opt = torch.optim.SGD
+        self.opt = torch.optim.Adam
 
     def objective(self, Z:torch.Tensor, X:torch.Tensor, model:BaseModel) -> torch.Tensor:
         return self._utility(Z, model) - self._cost(X, Z)
@@ -53,19 +50,6 @@ class GradientAscentBestResponse(BaseBestResponse):
             #for param_group in opt.param_groups:
             #    param_group['lr'] = self.lr/math.sqrt(t+1)
             opt.step()
-
-            # Projection
-            #with torch.no_grad():
-            #    # Project Z back into the ball { Z : cost(X,Z) <= 2 }
-            #    diff = Z - X
-            #    dist_sq = (diff**2).sum(dim=1, keepdim=True)  # ||Z - X||^2
-            #    radius_sq = 4 * self._cost.eps         # since cost = ||Z-X||^2 / (2*ε)
-            #    mask = dist_sq > radius_sq
-            #    if mask.any():
-            #        # Scale back to the boundary
-            #        scale = torch.sqrt(radius_sq / dist_sq[mask])
-            #        diff[mask] = diff[mask] * scale
-            #        Z.data = X + diff
 
             # Save frames if animating
             if animate_rate is not None and t%animate_rate==0:

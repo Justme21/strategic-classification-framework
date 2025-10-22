@@ -7,7 +7,7 @@ from .tools.model_training_tools import vanilla_training_loop
 class MLPModel(BaseModel, nn.Module):
     """Multi-Layer Perceptron"""
     def __init__(self, best_response:BaseBestResponse, loss:BaseLoss, address:str, x_dim:int, hidden_layers:int=1,\
-                  hidden_dim:int=2, activation:str='relu', dropout:float=0.0, is_primary:bool=True, **kwargs):
+                  hidden_dim:int=4, activation:str='relu', dropout:float=0.0, is_primary:bool=True, **kwargs):
         BaseModel.__init__(self, best_response, loss, address, x_dim, is_primary)
         nn.Module.__init__(self)
 

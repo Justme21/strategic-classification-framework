@@ -1,19 +1,21 @@
 from abc import ABC, abstractmethod
 from torch import Tensor
 
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from ..datasets.tools.standardisation_tools import Standardiser
+
 class BaseCost(ABC):
     @abstractmethod
     def __init__(self, **kwargs):
-        pass
+        self._standardiser = None
 
     @abstractmethod
     def __call__(self, X:Tensor, Z:Tensor) -> Tensor:
         pass
 
-    @abstractmethod
-    def set_standardiser(self, standardiser) -> None:
-        pass
+    def set_standardiser(self, standardiser:'Standardiser|None') -> None:
+        self._standardiser = standardiser
 
-    @abstractmethod
-    def get_standardiser(self):
-        pass
+    def get_standardiser(self) -> 'Standardiser|None':
+        return self._standardiser

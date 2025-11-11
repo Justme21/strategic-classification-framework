@@ -9,7 +9,7 @@ if TYPE_CHECKING:
 
 class BaseBestResponse(ABC):
     @abstractmethod
-    def __init__(self, utility:'BaseUtility', cost:'BaseCost', strategic_columns:list[int]|None,):
+    def __init__(self, utility:'BaseUtility|None', cost:'BaseCost|None', strategic_columns:list[int]|None=None,):
         assert cost is not None, f"Error: {type(self).__name__} requires a valid cost function be specified"
         assert utility is not None, f"Error: {type(self).__name__} requires a valid utility function be specified"
         self._cost = cost

@@ -84,6 +84,6 @@ class QuadraticModel(BaseModel, nn.Module):
         else:
             return torch.cat([flatQ, self.w.flatten()], dim=0)
 
-    def fit(self, train_dset:BaseDataset, opt, lr:float, batch_size:int, epochs:int, validate:bool, verbose:bool=False) -> dict:
-        train_losses_dict = vanilla_training_loop(self, train_dset, opt, lr, batch_size, epochs, validate, verbose)
+    def fit(self, train_dset:BaseDataset, opt, lr:float, batch_size:int, epochs:int, val_dset:BaseDataset, validate:bool, verbose:bool=False) -> dict:
+        train_losses_dict = vanilla_training_loop(self, train_dset, opt, lr, batch_size, epochs, val_dset, validate, verbose)
         return train_losses_dict

@@ -60,6 +60,9 @@ class BaseModel(ABC):
         self.load_state_dict(torch.load(f"{address}/model_params", weights_only=True, map_location=torch.device('cpu')))
         
     def to(self, device:str) -> None:
+        """ Load model weights onto device
+        : device (str) identifier for device to load models weights to
+        : return: None"""
         for w in self.get_weights():
             w.to(device)
 
@@ -71,7 +74,7 @@ class BaseModel(ABC):
         pass
 
     @abstractmethod
-    def fit(self, dataset:'BaseDataset', opt, lr:float, batch_size:int, epochs:int, validate:bool, verbose:bool) -> dict:
+    def fit(self, train_dset:'BaseDataset', opt, lr:float, batch_size:int, epochs:int, val_dset:'BaseDataset', validate:bool, verbose:bool) -> dict:
         """ Learn to predict the true y values associated with the given Xs
         : X: Data to learn from
         : y: True values
@@ -95,3 +98,8 @@ class BaseModel(ABC):
         """
         # This will often just be a call to forward, but formatted to be output friendly
         pass
+
+    #@abstractmethod
+    #def parameters(self) -> Tensor:
+    #    # Mocking the pytorch model parameters function. This function is specified automatically for pytorch models
+    #    pass

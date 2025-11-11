@@ -1,6 +1,6 @@
 import torch
 
-from ..interfaces import BaseDataset, BaseModel
+from ..interfaces import BaseDataset, BaseModel, BaseLoss
 from .device_tools import get_device
 
 def _get_ratio(y):
@@ -65,12 +65,20 @@ def evaluate_model(model:BaseModel, dataset:BaseDataset):
 
     return results
 
-def validate_model(model:BaseModel, dataset:BaseDataset):
+def evaluate_dataset(dataset:BaseDataset):
+    X, y = dataset.get_all_vals()
+    return _evaluate_dataset(X, y)
 
+def validate_model(model:BaseModel, dataset:BaseDataset, loss:BaseLoss):
     X, y = dataset.get_all_vals()
 
     device = get_device()
     X, y = X.to(device), y.to(device)
     
     accuracy_metrics =  _evaluate_accuracy(model, X, y)
-    return accuracy_metrics['clean_accuracy'], accuracy_metrics['strategic_accuracy']
+
+    with torch.enable_grad():
+        # validate_model is done with grad disabled to freeze weights
+        loss_eval = loss(model, X, y, train=False).item()
+
+    return accuracy_metrics['clean_accuracy'], accuracy_metrics['strategic_accuracy'], loss_eval

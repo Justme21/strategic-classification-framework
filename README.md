@@ -4,7 +4,7 @@ This repository contains the code to reproduce the experiments in
 
 * J. Geary, B. Gao, H. Gouk. [Computing Strategic Responses to Non-Linear Classifiers](https://arxiv.org/abs/2511.21560) EurIPS 2025 Workshop: Unifying Perspectives on Learning Biases.
 
-## Background
+## Background
 
 Strategic Classification considers interactions between an agent attempting to train a `classifier` model by minimising a `loss` when the targets being classified behave strategically according to their `best response`, which optimises the difference between the `utility` of a state change, and the `cost` associated with the state change. 
 

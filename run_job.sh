@@ -1,0 +1,19 @@
+python -m Clf_Learner.main \
+    --dirname exp_results \
+    --datasets give_me_some_credit\
+    --best_response lagrange\
+    --cost quadratic \
+    --loss strategic_cross_entropy \
+    --model mlp \
+    --utility strategic \
+    --lr 0.001 \
+    --batch 1024 \
+    --epochs 50 \
+    --seed 0 \
+    --gpu \
+    --train \
+    --validate \
+    --test \
+    --store \
+    --verbose \
+    --args '{"best_response": {"max_iterations": 20000, "lr":0.0007, "margin": 0.05, "lagrange_mult_lr": 0.05, "lagrange_mult_cost_lr": 0.01}, "cost": {"radius": 2.0}, "model": {"hidden_layers": 1, "hidden_dim": 20, "activation": "tanh"}, "loss": {"gradient_estimator": ""}, "datasets":{"train": 0.6, "val": 0.2, "test": 0.2}}'

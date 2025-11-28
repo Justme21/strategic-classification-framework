@@ -1,48 +1,18 @@
-TODO
-How to run this code: (Requires Python version< 3.12.0)
+# Strategic Classification Framework
 
-#python3 -m Clf_Learner.main
---dirname <name to write the results to in results/ directory>
+This repository contains the code to reproduce the experiments in
 
---datasets \ # e.g. twin_moons, ball, ring, ... 
+* J. Geary, B. Gao, H. Gouk. [Computing Strategic Responses to Non-Linear Classifiers](https://arxiv.org/abs/2511.21560) EurIPS 2025 Workshop: Unifying Perspectives on Learning Biases.
 
---best_response <best_response_name> \ # lagrange, identity 
+## Background
 
---cost quadratic \ # Currently no other costs of interest 
+Strategic Classification considers interactions between an agent attempting to train a `classifier` model by minimising a `loss` when the targets being classified behave strategically according to their `best response`, which optimises the difference between the `utility` of a state change, and the `cost` associated with the state change. 
 
---loss naive_ssvm_hinge \ # Currently no other losses of interest 
+## Using This Repo
 
---model \ # linear, quadratic, mlp 
+This is a modular framework for training classifier models in strategic settings. The modular units can be specified from the command line. New modules can be added to the appropriate subdirectories and the module class definitions can all be found in the `Clf_Learner/interfaces` subdirectory. Arguments can be passed as a dict to each of the module units using the `--args' command line argument, and specifying the intended module.
 
---utility strategic \ # Currently no other utilities of interest 
+Sample code demonstrating how to run the experiment code can be found in [run.sh](https://github.com/Justme21/strategic-classification-framework/blob/main/run.sh).
 
---lr 0.01 \ # Outer loop learning rate 
+The notebooks to reproduce the datasets and the visualisations used in the experiments can be found in the `data_tools` directory.
 
---batch 128 \ # Outer loop batch size 
-
---epochs 50 \ # Number of epochs to run outer loop for 
-
---seed 0 \ # Supposed to help with reproducibility 
-
---gpu \ # Binary flag. Include to run on GPU 
-
---implicit \ # Binary flag, Include to run implicit gradient algorithm
-
---train \ # Binary flag. Include to run training 
-
---validate \ # Binary flag. Include to perform validation
-
---test \ # Binary flag. Include to perform testing 
-
---store \ # Binary flag. Include to store results 
-
---verbose \ # Binary flag. Include to produce debug text during run 
-
---args '{"best_response": {"max_iterations": 10000, "lr":0.005, "margin": 0.05, "lagrange_mult_lr": 0.0005, "lagrange_mult_cost_lr": 0.01}, "cost": {"radius": 2.0}}' # Hyperparamters specific to the various modules being run. Each args entry here gets mapped to the corresponding module during initialisation.
-
-see python3 -m Clf_Learner.main --help for more details on argument meaning
-
-Identified good hyperparameter settings for best response:
-
-Model: Linear; {"max_iterations": 10000, "lr":0.005, "margin": 5e-2, "lagrange_mult_lr": 5e-4, "lagrange_mult_cost_lr": 1e-2}
-Model: Quadratic/MLP; {"max_iterations": 20000, "lr":0.0007, "margin": 5e-2, "lagrange_mult_lr": 5e-2, "lagrange_mult_cost_lr": 1e-2}

@@ -14,7 +14,7 @@ This is a modular framework for training classifier models in strategic settings
 
 Explanations for the remaining arguments can be found using --help.
 
-Sample code demonstrating how to run the experiment code can be found in [run.sh](https://github.com/Justme21/strategic-classification-framework/blob/main/run.sh).
+Sample code demonstrating how to run the experiment code can be found in [run_job.sh](https://github.com/Justme21/strategic-classification-framework/blob/main/run_job.sh).
 
 The notebooks to reproduce the datasets and the visualisations used in the experiments can be found in the `data_tools` directory.
 
